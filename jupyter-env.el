@@ -43,6 +43,13 @@ call the function `jupyter-runtime-directory'.")
   :type 'string
   :group 'jupyter)
 
+(defcustom jupyter-python-executable "python3"
+  "The name of the `python' executable used for
+`jupyter-session-with-random-ports'. Can be set per connection in
+tramp using `connection-local-set-profile-variables'."
+  :type 'string
+  :group 'jupyter)
+
 (defun jupyter-command (&rest args)
   "Run a Jupyter shell command synchronously, return its output.
 The shell command run is
@@ -157,7 +164,7 @@ The session can be used to write a connection file, see
     ;; the new process is launched.  We call python directly to avoid this.
     (let ((process (start-file-process
                     "jupyter-session-with-random-ports" (current-buffer)
-                    (jupyter-locate-python) "-c"
+                    jupyter-python-executable "-c"
                     "from jupyter_client.kernelapp import main; main()")))
       (set-process-query-on-exit-flag process nil)
       (jupyter-with-timeout
