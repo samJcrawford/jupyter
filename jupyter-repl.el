@@ -1392,8 +1392,10 @@ Before shutting down the kernel, deactivate
 `jupyter-repl-interaction-mode' in all buffers associated with
 the REPL."
   (when (eq major-mode 'jupyter-repl-mode)
-    (let ((connected-p (jupyter-connected-p jupyter-current-client)))
+    (let ((connected-p (jupyter-connected-p jupyter-current-client))
+	  (alive-p (jupyter-kernel-alive-p jupyter-current-client)))
       (or (not connected-p)
+	  (not alive-p)
           (when (y-or-n-p (format "Jupyter REPL (%s) still connected.  Shutdown kernel? "
                                   (buffer-name (current-buffer))))
             (jupyter-repl--deactivate-interaction-buffers)
