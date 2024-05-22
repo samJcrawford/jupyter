@@ -181,6 +181,12 @@ The session can be used to write a connection file, see
         ;; Tell the `jupyter kernel` process to shutdown itself and
         ;; the launched kernel.
         (interrupt-process process)
+	;; The interrupt takes a while to kill all the children, and
+	;; it seems that moving past this point too quickly leaves
+	;; zombie processes. This wait has been moved from the calling
+	;; method `jupyter-launch'
+	(sit-for 0.2)
+
         ;; Wait until the connection file is cleaned up before
         ;; forgetting about the process completely.
         (jupyter-with-timeout

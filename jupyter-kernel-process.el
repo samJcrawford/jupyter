@@ -335,13 +335,7 @@ a newly generated message signing key will be set as the value of
 KERNEL's SESSION slot if it is nil."
   (pcase-let (((cl-struct jupyter-kernel-process session) kernel))
     (unless session
-      (setf (jupyter-kernel-session kernel) (jupyter-session-with-random-ports))
-      ;; This is here for stability when running the tests.  Sometimes
-      ;; the kernel ports are not set up fast enough due to the hack
-      ;; done in `jupyter-session-with-random-ports'.  The effect
-      ;; seems to be messages that are sent but never received by the
-      ;; kernel.
-      (sit-for 0.2))))
+      (setf (jupyter-kernel-session kernel) (jupyter-session-with-random-ports)))))
 
 (cl-defmethod jupyter-launch ((kernel jupyter-kernel-process))
   "Start KERNEL's process.
@@ -412,5 +406,3 @@ See also https://jupyter-client.readthedocs.io/en/stable/kernels.html#kernel-spe
 (provide 'jupyter-kernel-process)
 
 ;;; jupyter-kernel-process.el ends here
-
-
