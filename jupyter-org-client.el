@@ -832,7 +832,17 @@ C-x C-e         `jupyter-eval-line-or-region'"
         (lambda (x) (eq (car x) 'jupyter-org-font-lock-ansi-escapes))
         org-font-lock-keywords))))
 
-(add-hook 'org-mode-hook 'jupyter-org-interaction-mode)
+(defvar jupyter-org-enable-interaction
+  nil
+  "Set to t to automatically enable `jupyter-org-interaction-mode'.")
+
+(defun jupyter-org-interaction-mode-maybe ()
+  "Enable `jupyter-org-interaction-mode' if `jupyter-org-enable-interaction'."
+  (if jupyter-org-enable-interaction
+    (jupyter-org-interaction-mode  1)
+    (jupyter-org-interaction-mode -1)))
+
+(add-hook 'org-mode-hook 'jupyter-org-interaction-mode-maybe)
 
 ;;; Constructing org syntax trees
 
