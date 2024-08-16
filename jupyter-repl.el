@@ -1535,14 +1535,53 @@ CLIENT defaults to `jupyter-current-client'."
 ;; Adapted from isearch in `comint', see `comint-history-isearch-search' for
 ;; details
 
+(defcustom jupyter-repl-history-isearch nil
+  "Non-nil to Isearch in input history only, not in repl buffer output.
+If t, usual Isearch keys like \\`C-r' and \\`C-M-r' in jupyter repl search
+in the input history."
+  :type '(choice (const :tag "Don't search in input history" nil)
+		 (const :tag "Always search in input history" t))
+  :group 'jupyter-repl
+  :version "23.2")
+
+(defun jupyter-repl-history-isearch-backward ()
+  "Search for a string backward in input history using Isearch."
+  (interactive)
+  (setq jupyter-repl-history-isearch t)
+  (isearch-backward nil t))
+
+
+(defun jupyter-repl-history-isearch-backward-regexp ()
+  "Search for a regular expression backward in input history using Isearch."
+  (interactive)
+  (setq jupyter-repl-history-isearch t)
+  (isearch-backward-regexp nil t))
+
+
 (defun jupyter-repl-isearch-setup ()
   "Setup Isearch to search through the input history."
-  (setq-local isearch-search-fun-function
-              #'jupyter-repl-history-isearch-search)
-  (setq-local isearch-wrap-function
-              #'jupyter-repl-history-isearch-wrap)
-  (setq-local isearch-push-state-function
-              #'jupyter-repl-history-isearch-push-state))
+  (when (eq jupyter-repl-history-isearch t)
+    (setq-local isearch-search-fun-function
+		#'jupyter-repl-history-isearch-search)
+    (setq-local isearch-wrap-function
+		#'jupyter-repl-history-isearch-wrap)
+    (setq-local isearch-push-state-function
+		#'jupyter-repl-history-isearch-push-state)
+    (add-hook 'isearch-mode-end-hook #'jupyter-repl-history-isearch-end nil t)))
+
+
+(defun jupyter-repl-history-isearch-end ()
+  "Clean up the comint after terminating Isearch in comint."
+  (setq isearch-search-fun-function 'isearch-search-fun-default)
+  (setq isearch-wrap-function nil)
+  (setq isearch-push-state-function nil)
+  ;; Force isearch to not change mark.
+  (setq isearch-opoint (point))
+  (kill-local-variable 'isearch-lazy-count)
+  (remove-hook 'isearch-mode-end-hook #'jupyter-repl-history-isearch-end t)
+  (unless isearch-suspended
+    (custom-reevaluate-setting 'jupyter-repl-history-isearch)))
+
 
 ;; Adapted from `comint-history-isearch-search'
 (defun jupyter-repl-history-isearch-search ()
@@ -1653,13 +1692,14 @@ Return the buffer switched to."
 (defvar jupyter-repl-mode-map
   (let ((map (make-sparse-keymap)))
     (define-key map "q" nil)
-    (define-key map [remap backward-sentence] #'jupyter-repl-backward-cell)
-    (define-key map [remap forward-sentence] #'jupyter-repl-forward-cell)
+    (define-key map (kbd "C-c C-p") #'jupyter-repl-backward-cell)
+    (define-key map (kbd "C-c C-n") #'jupyter-repl-forward-cell)
     (define-key map (kbd "RET") #'jupyter-repl-ret)
     (define-key map (kbd "M-n") #'jupyter-repl-history-next)
     (define-key map (kbd "M-p") #'jupyter-repl-history-previous)
     (define-key map (kbd "C-c C-o") #'jupyter-repl-clear-cells)
     (define-key map (kbd "C-c C-u") #'jupyter-repl-clear-input)
+    (define-key map (kbd "M-r") #'jupyter-repl-history-isearch-backward)
     (define-key map (kbd "C-c M-r") #'jupyter-repl-history-previous-matching)
     (define-key map (kbd "C-c M-s") #'jupyter-repl-history-next-matching)
     map))
@@ -1717,7 +1757,7 @@ Return the buffer switched to."
     (add-hook 'pre-redisplay-functions 'jupyter-repl-preserve-window-margins nil t)
     ;; Initialize the REPL
     (jupyter-repl-initialize-fontification)
-    (jupyter-repl-isearch-setup)
+    (add-hook 'isearch-mode-hook #'jupyter-repl-isearch-setup nil t)
     (jupyter-repl-sync-execution-state)
     (jupyter-repl-interaction-mode)
     ;; Do this last so that it runs before any other `change-major-mode-hook's.
