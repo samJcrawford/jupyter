@@ -162,10 +162,13 @@ The session can be used to write a connection file, see
     ;; but exec like commands on Windows start a new process instead of replacing
     ;; the current one which results in the process we start here exiting after
     ;; the new process is launched.  We call python directly to avoid this.
-    (let ((process (start-file-process
-                    "jupyter-session-with-random-ports" (current-buffer)
-                    jupyter-python-executable "-c"
-                    "from jupyter_client.kernelapp import main; main()")))
+    (let ((process (apply #'start-file-process
+                    (append (list "jupyter-session-with-random-ports" (current-buffer))
+			    (cond
+			     ((string-equal system-type "windows-nt")
+			      (list jupyter-python-executable "-c"
+				    "from jupyter_client.kernelapp import main; main()"))
+			     (t (list jupyter-executable "kernel")))))))
       (set-process-query-on-exit-flag process nil)
       (jupyter-with-timeout
           (nil jupyter-long-timeout
