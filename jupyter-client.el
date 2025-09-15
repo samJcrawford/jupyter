@@ -431,6 +431,10 @@ SPEC is a kernelspec that will be used to initialize a new
 kernel whose kernelspec if SPEC."
   (jupyter-client (jupyter-kernel :spec spec) client-class))
 
+(cl-defmethod jupyter-connected-p ((client (eql nil)))
+  "Return nil if CLIENT is nil."
+  nil)
+
 (cl-defmethod jupyter-connected-p ((client jupyter-kernel-client))
   "Return non-nil if CLIENT is connected to a kernel."
   (slot-boundp client 'io))
